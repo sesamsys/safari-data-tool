@@ -25,14 +25,18 @@ jobs:
       # Extract the section for the tag being released from CHANGELOG.md so the
       # hand-written changelog is the single source of truth for release notes.
       # The tag "vX.Y.Z" maps to the "## [X.Y.Z]" heading in the changelog.
+      # Capture stops at the next version heading OR the link-reference block
+      # (e.g. "[0.1.0]: https://...") so those definitions never leak into the
+      # notes, regardless of where the section sits in the file.
       - name: Extract release notes from CHANGELOG
         run: |
           version="${GITHUB_REF_NAME#v}"
           notes_file="$(mktemp)"
           awk -v ver="$version" '
-            $0 ~ "^## \\[" ver "\\]" { capture = 1; next }
-            capture && /^## \[/      { exit }
-            capture                  { lines[n++] = $0 }
+            $0 ~ "^## \\[" ver "\\]"      { capture = 1; next }
+            capture && /^## \[/           { exit }
+            capture && /^\[[^]]+\]:[ \t]/ { exit }
+            capture                       { lines[n++] = $0 }
             END {
               start = -1; end = -1
               for (i = 0; i < n; i++) {
