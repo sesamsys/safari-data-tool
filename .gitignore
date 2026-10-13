@@ -1,0 +1,14 @@
+# Binaries
+/safari-data-tool
+*.exe
+*.out
+
+# Go
+/vendor/
+*.test
+
+# OS
+.DS_Store
+
+# Editor
+*.swp
