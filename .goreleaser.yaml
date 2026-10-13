@@ -28,8 +28,9 @@ checksum:
   name_template: "checksums.txt"
   algorithm: sha256
 
-# The hand-maintained CHANGELOG.md is the source of truth for release notes, so
-# the commit-derived changelog is disabled here. The CI workflow extracts the
-# section for the tag being released and passes it via `--release-notes`.
-changelog:
-  disable: true
+# Release notes come from the hand-maintained CHANGELOG.md: the CI workflow
+# extracts the section for the tag being released and passes it via
+# `--release-notes`, which overrides GoReleaser's auto-generated changelog.
+# Note: do NOT set `changelog.disable: true` here — in GoReleaser v2 that skips
+# the pipe that applies `--release-notes`, which would leave the release body
+# empty.
