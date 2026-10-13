@@ -1,0 +1,59 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: stable
+
+      # Extract the section for the tag being released from CHANGELOG.md so the
+      # hand-written changelog is the single source of truth for release notes.
+      # The tag "vX.Y.Z" maps to the "## [X.Y.Z]" heading in the changelog.
+      - name: Extract release notes from CHANGELOG
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          notes_file="$(mktemp)"
+          awk -v ver="$version" '
+            $0 ~ "^## \\[" ver "\\]" { capture = 1; next }
+            capture && /^## \[/      { exit }
+            capture                  { lines[n++] = $0 }
+            END {
+              start = -1; end = -1
+              for (i = 0; i < n; i++) {
+                if (lines[i] ~ /[^[:space:]]/) { if (start < 0) start = i; end = i }
+              }
+              if (start < 0) exit
+              for (i = start; i <= end; i++) print lines[i]
+            }
+          ' CHANGELOG.md > "$notes_file"
+          if [ ! -s "$notes_file" ]; then
+            echo "::error::No CHANGELOG.md section found for version ${version}. Add a '## [${version}]' entry before tagging."
+            exit 1
+          fi
+          echo "RELEASE_NOTES_FILE=$notes_file" >> "$GITHUB_ENV"
+          echo "Extracted release notes for ${version}:"
+          cat "$notes_file"
+
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          args: release --clean --release-notes "${{ env.RELEASE_NOTES_FILE }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

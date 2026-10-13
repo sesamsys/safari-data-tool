@@ -3,9 +3,12 @@
 // .kiro/specs/safari-data-tool/.
 package main
 
-import "os"
+import (
+	"os"
+
+	"github.com/sesamsys/safari-data-tool/internal/cli"
+)
 
 func main() {
-	// Entry point is wired up during implementation (see tasks.md task 1.1).
-	os.Exit(0)
+	os.Exit(cli.Run(os.Args))
 }

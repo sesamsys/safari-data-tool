@@ -1,0 +1,35 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: safari-data-tool
+    binary: safari-data-tool
+    main: .
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - id: safari-data-tool
+    ids:
+      - safari-data-tool
+    formats:
+      - tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: "checksums.txt"
+  algorithm: sha256
+
+# The hand-maintained CHANGELOG.md is the source of truth for release notes, so
+# the commit-derived changelog is disabled here. The CI workflow extracts the
+# section for the tag being released and passes it via `--release-notes`.
+changelog:
+  disable: true

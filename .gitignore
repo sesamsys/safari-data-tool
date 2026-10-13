@@ -12,3 +12,6 @@
 
 # Editor
 *.swp
+
+# Release (GoReleaser)
+/dist/
