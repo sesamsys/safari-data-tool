@@ -17,12 +17,38 @@ import (
 	"github.com/sesamsys/safari-data-tool/internal/model"
 	"github.com/sesamsys/safari-data-tool/internal/scanner"
 	"github.com/sesamsys/safari-data-tool/internal/selection"
+	"github.com/sesamsys/safari-data-tool/internal/tui"
 	"github.com/sesamsys/safari-data-tool/internal/ui"
 )
 
 // defaultListingCount is the number of largest folders shown when the operator
 // does not pass -n (Req 1.1).
 const defaultListingCount = 15
+
+// command classifies the invocation from its argument slice.
+type command int
+
+const (
+	cmdTUI    command = iota // bare invocation / default
+	cmdList                  // explicit "list" subcommand
+	cmdDelete                // explicit "delete" subcommand
+)
+
+// classify picks the command from os.Args-style arguments. args[0] is the
+// program name. A first argument of "list" or "delete" selects that
+// subcommand; anything else (including no argument) selects the TUI
+// (Req 1.1, 1.2, 1.3).
+func classify(args []string) command {
+	if len(args) > 1 {
+		switch args[1] {
+		case "list":
+			return cmdList
+		case "delete":
+			return cmdDelete
+		}
+	}
+	return cmdTUI
+}
 
 // Run is the command-line entry point. It receives the full argument slice
 // (os.Args) and returns a process exit code. It wires the real operating-system
@@ -43,10 +69,26 @@ func Run(args []string) int {
 // into both flows for a uniform core; the list flow ignores it, while the
 // delete flow reads it for the confirmation prompt.
 func run(args []string, stdout, stderr io.Writer, stdin io.Reader, f fsx.FileSystem, home string) int {
-	if len(args) > 1 && args[1] == "delete" {
+	switch classify(args) {
+	case cmdList:
+		return runList(args, stdout, stderr, stdin, f, home)
+	case cmdDelete:
 		return runDelete(args, stdout, stderr, stdin, f, home)
+	default: // cmdTUI
+		return runTUI(stdout, stderr, f, home)
 	}
-	return runList(args, stdout, stderr, stdin, f, home)
+}
+
+// runTUI launches the interactive browser (Req 1.1). It constructs the real
+// termios-backed terminal and delegates to tui.Run. A terminal-construction
+// failure prints to stderr and exits non-zero (Req 8.3).
+func runTUI(stdout, stderr io.Writer, f fsx.FileSystem, home string) int {
+	term, err := tui.NewOSTerminal()
+	if err != nil {
+		fmt.Fprintf(stderr, "error: %v\n", err)
+		return 1
+	}
+	return tui.Run(term, f, scanner.BasePath(home), stdout, stderr)
 }
 
 // runList implements the default listing flow (Req 1): parse the -n count flag,

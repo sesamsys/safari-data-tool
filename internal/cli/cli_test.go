@@ -55,10 +55,12 @@ func newPopulatedFake(t *testing.T) *fsx.FakeFS {
 // --- 1. Dispatch routing -------------------------------------------------
 
 func TestRun_RoutesToListing(t *testing.T) {
+	// A bare invocation now launches the TUI (Req 1.1); the listing flow is
+	// reached only through the explicit "list" subcommand (Req 1.2), so these
+	// routing cases all go through "list".
 	cases := map[string][]string{
-		"empty":        {"prog"},
 		"list subcmd":  {"prog", "list"},
-		"bare -n flag": {"prog", "-n", "5"},
+		"list -n flag": {"prog", "list", "-n", "5"},
 	}
 
 	for name, args := range cases {
@@ -118,7 +120,7 @@ func TestRun_ListCountNonPositive(t *testing.T) {
 			fake := newPopulatedFake(t)
 			var stdout, stderr bytes.Buffer
 
-			code := run([]string{"prog", "-n", n}, &stdout, &stderr, strings.NewReader(""), fake, fake.Root())
+			code := run([]string{"prog", "list", "-n", n}, &stdout, &stderr, strings.NewReader(""), fake, fake.Root())
 
 			if code != 2 {
 				t.Fatalf("exit = %d, want 2 for -n %s", code, n)

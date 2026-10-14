@@ -1,0 +1,680 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1. Create the `internal/tui` package skeleton and core types": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511108
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990519160
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990569069
+      }
+    ],
+    "2.1 Implement `decodeKey([]byte) Key` in `internal/tui/keys.go`": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511173
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990572600
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990643872
+      }
+    ],
+    "2.2 Write unit/example tests for `decodeKey`": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511222
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990648362
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990723059
+      }
+    ],
+    "3. Implement the `FakeTerminal` test driver": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511266
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990573327
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990644876
+      }
+    ],
+    "4.1 Implement `newModel(folders []model.ScannedFolder, status model.AccessStatus) Model` in `internal/tui/model.go`": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511299
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990649798
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990723989
+      }
+    ],
+    "4.2 Implement `moveUp` and `moveDown` on `Model`": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511332
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990651106
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990763888
+      }
+    ],
+    "4.3 Implement `handleKey(k Key) (Model, action)` on `Model`": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511382
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990651912
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990804426
+      }
+    ],
+    "4.4 Write property test for the folder list shape": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511425
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990967428
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991073144
+      }
+    ],
+    "4.5 Write property test for wrap-around navigation": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511458
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990968379
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991074084
+      }
+    ],
+    "4.6 Write property test for selection index staying in range": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511488
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990969790
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991074974
+      }
+    ],
+    "4.7 Write property test for `d`/`D` opening confirmation": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511519
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990970726
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991076438
+      }
+    ],
+    "4.8 Write property test for `n`/`N` cancelling without deleting": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511548
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990971691
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991077216
+      }
+    ],
+    "4.9 Write example test for the initial selection index": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511581
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991083781
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991139664
+      }
+    ],
+    "5.1 Implement `applyDelete(m Model, f fsx.FileSystem, base string) Model` and the pure `rebuildAfterDelete(prev Model, folders []model.ScannedFolder, status model.AccessStatus) Model` helper in `internal/tui/model.go`": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511607
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990858127
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990958060
+      }
+    ],
+    "5.2 Write example test for deletion-failure handling": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511640
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991398044
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991460907
+      }
+    ],
+    "5.3 Write example test for re-scan after successful deletion": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511664
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991290918
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991394383
+      }
+    ],
+    "5.4 Write example test for the all-clear disambiguation in `rebuildAfterDelete`": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511697
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991290309
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991392535
+      }
+    ],
+    "6. Checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511725
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991156447
+      }
+    ],
+    "7.1 Implement `render(m Model) []byte` and `renderConfirm(folder model.ScannedFolder) string` in `internal/tui/render.go`": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511760
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990859514
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990959455
+      }
+    ],
+    "7.2 Write property test for row format reuse": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511794
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991164235
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991281220
+      }
+    ],
+    "7.3 Write property test for the always-present legend": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511826
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991165635
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991280351
+      }
+    ],
+    "7.4 Write property test for the single inverted row": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511859
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991166286
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991282127
+      }
+    ],
+    "7.5 Write property test for the confirmation detail set": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511886
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991288830
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991390247
+      }
+    ],
+    "7.6 Write example tests for access-status rendering content": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511918
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991287892
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991393489
+      }
+    ],
+    "8.1 Implement `osTerminal` and `NewOSTerminal()` in `internal/tui/terminal.go`": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511951
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990860909
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990960880
+      }
+    ],
+    "9.1 Implement `Run(term Terminal, f fsx.FileSystem, base string, stdout, stderr io.Writer) int` in `internal/tui/run.go`": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990511977
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991161898
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991277931
+      }
+    ],
+    "9.2 Write property test for the access-status exit code": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990512009
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991473611
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991604791
+      }
+    ],
+    "9.3 Write property test for `y`/`Y` deleting the selected path": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990512035
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991471993
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991606182
+      }
+    ],
+    "9.4 Write example tests for scan-before-render and terminal restore": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990512068
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991470617
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991607137
+      }
+    ],
+    "9.5 Write property test for the post-deletion all-clear state": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990512101
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991469649
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991608534
+      }
+    ],
+    "9.6 Write example tests for the all-clear loop and key handling": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990512137
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991468188
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991609158
+      }
+    ],
+    "10.1 Add the pure `classify` helper and `command` type to `internal/cli/cli.go`": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990512168
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990861837
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990961715
+      }
+    ],
+    "10.2 Add `runTUI` and switch `run` over `classify`": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990512218
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991163264
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991278911
+      }
+    ],
+    "10.3 Write property test for dispatch classification": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990512248
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991613570
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991711465
+      }
+    ],
+    "10.4 Write example tests for the `list`/`delete` dispatch preservation": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990512282
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991614244
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991712362
+      }
+    ],
+    "11.1 Write a test asserting the module stays standard-library only": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990512315
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991286440
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991391151
+      }
+    ],
+    "12. Final checkpoint - Ensure all tests pass": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990512353
+      },
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991725633
+      }
+    ],
+    "2. Implement pure key decoding": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990723102
+      }
+    ],
+    "8. Implement the real terminal driver": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791990960906
+      }
+    ],
+    "4. Implement the pure Model and its transitions": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991139717
+      }
+    ],
+    "11. Add the stdlib-only smoke check": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991391192
+      }
+    ],
+    "7. Implement the pure renderer": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991393535
+      }
+    ],
+    "5. Implement the impure delete-and-rebuild transition": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991460951
+      }
+    ],
+    "9. Implement the event loop and wire the layers together": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991609192
+      }
+    ],
+    "10. Wire the TUI into the cli dispatch": [
+      {
+        "executionId": "02c7a042-0bee-4520-8b18-2073a4b6182d",
+        "chatSessionId": "sess_8cc0f42a-2205-488d-8698-09d106288b76",
+        "timestamp": 1791991712403
+      }
+    ]
+  }
+}
