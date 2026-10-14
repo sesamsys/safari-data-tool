@@ -15,3 +15,7 @@
 
 # Release (GoReleaser)
 /dist/
+
+# Agent (task artifacts and worktrees)
+/.agents/
+/.worktrees/
