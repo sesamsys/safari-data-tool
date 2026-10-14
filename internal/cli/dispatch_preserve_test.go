@@ -2,7 +2,6 @@ package cli
 
 import (
 	"bytes"
-	"os"
 	"strings"
 	"testing"
 )
@@ -69,15 +68,14 @@ func TestRun_DeletePreservesNonInteractiveBehavior(t *testing.T) {
 
 	out := stdout.String()
 	// Existing non-interactive deletion behavior: the confirmation line is
-	// printed to stdout.
-	if !strings.Contains(out, "Deleted") {
-		t.Fatalf("expected delete confirmation on stdout, got:\n%s", out)
+	// printed to stdout. Under the new default this reports a clear.
+	if !strings.Contains(out, "Cleared") {
+		t.Fatalf("expected clear confirmation on stdout, got:\n%s", out)
 	}
 
-	// The targeted folder is actually gone.
-	if _, err := fake.Stat(folder); !os.IsNotExist(err) {
-		t.Fatalf("folder still exists after non-interactive delete: stat err=%v", err)
-	}
+	// New default: the targeted folder's data is cleared while it remains
+	// resolvable (its origin sidecar is preserved).
+	assertCleared(t, fake, folder, "example.com")
 
 	// The TUI was NOT launched: the forced-delete flow never emits the
 	// full-screen clear escape that every TUI frame starts with.

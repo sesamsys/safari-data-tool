@@ -10,12 +10,17 @@ package deleter
 
 import (
 	"errors"
+	"io/fs"
 	"path/filepath"
 	"strings"
 
 	"github.com/sesamsys/safari-data-tool/internal/fsx"
 	"github.com/sesamsys/safari-data-tool/internal/model"
 )
+
+// originFileName is the exact base name of the WebKit metadata sidecar files
+// that selective deletion preserves. Nothing else is treated as metadata.
+const originFileName = "origin"
 
 // ErrNoMatch is returned by Match when no scanned folder satisfies the target.
 var ErrNoMatch = errors.New("no matching folder found")
@@ -92,10 +97,104 @@ func ValidatePath(base, target string) error {
 // Delete removes the selected folder recursively after the caller has matched,
 // validated, and confirmed it (Req 4.6). It re-runs ValidatePath(base, target)
 // as a defensive final gate, returning its error if the target is unsafe, and
-// otherwise delegates removal to f.RemoveAll(target).
+// otherwise delegates removal to f.RemoveAll(target). It remains available as
+// the full-wipe primitive reused by DeletePreservingOrigin's no-sidecar
+// fallback.
 func Delete(f fsx.FileSystem, base, target string) error {
 	if err := ValidatePath(base, target); err != nil {
 		return err
 	}
 	return f.RemoveAll(target)
+}
+
+// DeletePreservingOrigin clears a hashed folder's data while preserving every
+// file whose base name is exactly "origin" (the WebKit metadata sidecar) and
+// the directory chain leading to each. The now-tiny target folder remains and
+// still resolves to its domain on the next scan, instead of vanishing or
+// becoming "Unknown Domain". This is the default deletion behavior.
+//
+// It applies the same safety guarantee as Delete: ValidatePath(base, target)
+// runs first (unchanged guard), so the target must be a validated direct child
+// of base before any walking or removal happens; everything removed is strictly
+// inside that validated target. Returns ValidatePath's error (ErrPathUnsafe)
+// when the target is unsafe, removing nothing.
+//
+// Algorithm (two passes, remove-only, through fsx.FileSystem):
+//
+//   - Pass 1 walks target collecting every regular file named "origin" and, for
+//     each, marks it and every ancestor directory up to and including target as
+//     "protected". If no "origin" file exists there is nothing to preserve, so
+//     the whole folder is removed via Delete (the folder then disappears from
+//     the next scan).
+//   - Pass 2 walks target top-down and RemoveAll's any entry not in the
+//     protected set, returning fs.SkipDir after removing a directory so the walk
+//     never descends into an already-removed subtree. Protected directories and
+//     target itself are kept.
+//
+// Symlink-escape safety is inherited from filepath.WalkDir (which the fsx
+// implementations use and which does not follow symlinked directories): every
+// removed path is produced by walking inside the validated target.
+func DeletePreservingOrigin(f fsx.FileSystem, base, target string) error {
+	if err := ValidatePath(base, target); err != nil {
+		return err
+	}
+
+	cleanTarget := filepath.Clean(target)
+
+	// Pass 1: collect the set of paths to protect (origin files and the
+	// directory chain leading to each, up to and including the target).
+	protected := map[string]struct{}{cleanTarget: {}}
+	foundOrigin := false
+	walkErr := f.WalkDir(cleanTarget, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() || d.Name() != originFileName {
+			return nil
+		}
+		// Mark the origin file and every ancestor up to the target.
+		foundOrigin = true
+		p := filepath.Clean(path)
+		for {
+			protected[p] = struct{}{}
+			if p == cleanTarget {
+				break
+			}
+			parent := filepath.Dir(p)
+			if parent == p { // defensive: cannot climb above the target
+				break
+			}
+			p = parent
+		}
+		return nil
+	})
+	if walkErr != nil {
+		return walkErr
+	}
+
+	// No sidecar to preserve: remove the whole folder (full-wipe fallback).
+	if !foundOrigin {
+		return f.RemoveAll(cleanTarget)
+	}
+
+	// Pass 2: remove every entry not in the protected set. SkipDir after
+	// removing a directory so the walk does not descend into a removed subtree.
+	return f.WalkDir(cleanTarget, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		p := filepath.Clean(path)
+		if _, ok := protected[p]; ok {
+			// Protected directory (or the target): keep walking into it so we
+			// reach the non-protected siblings of the preserved origin files.
+			return nil
+		}
+		if removeErr := f.RemoveAll(p); removeErr != nil {
+			return removeErr
+		}
+		if d.IsDir() {
+			return fs.SkipDir
+		}
+		return nil
+	})
 }

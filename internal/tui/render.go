@@ -90,7 +90,7 @@ func render(m Model) []byte {
 // crlf constant).
 func renderConfirm(folder model.ScannedFolder) string {
 	return fmt.Sprintf(
-		"About to permanently delete:%[1]s  Domain: %[2]s%[1]s  Hash:   %[3]s%[1]s  Size:   %[4]s%[1]sProceed? [y/N]: ",
+		"About to clear this site's data (permanent, no undo); a tiny origin metadata marker is kept so the folder stays identifiable:%[1]s  Domain: %[2]s%[1]s  Hash:   %[3]s%[1]s  Size:   %[4]s%[1]sProceed? [y/N]: ",
 		crlf, folder.Domain, folder.Hash, ui.FormatSize(folder.SizeKB),
 	)
 }

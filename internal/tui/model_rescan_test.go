@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"bytes"
+	"encoding/binary"
 	"path/filepath"
 	"testing"
 
@@ -12,38 +14,57 @@ import (
 // seed hashed child folders where scanner.Scan expects to find them.
 const containerSuffix = "Library/Containers/com.apple.Safari/Data/Library/WebKit/WebsiteData/Default"
 
+// encodeOrigin builds an origin-file body as (scheme, host) pair records in the
+// [uint32 LE length N][1 flag byte 0x01][N UTF-8 bytes] scheme so a seeded
+// folder resolves to the given host.
+func encodeOrigin(scheme, host string) []byte {
+	var buf bytes.Buffer
+	for _, r := range []string{scheme, host} {
+		var lenBytes [4]byte
+		binary.LittleEndian.PutUint32(lenBytes[:], uint32(len(r)))
+		buf.Write(lenBytes[:])
+		buf.WriteByte(0x01)
+		buf.WriteString(r)
+	}
+	return buf.Bytes()
+}
+
 // TestApplyDelete_RescanAfterSuccessfulDeletion exercises the re-scan-and-rebuild
-// path of applyDelete end-to-end against a Safari-shaped fake tree.
+// path of applyDelete end-to-end against a Safari-shaped fake tree, under the
+// new default where deletion preserves the `origin` sidecar.
 //
-// It seeds several hashed child folders of differing recursive size under the
-// container suffix, builds a Model from an initial scan, deletes the currently
-// selected folder, and asserts the rebuilt list:
-//   - no longer contains the deleted folder's AbsPath (Req 6.1),
-//   - is the descending top-15 of the current scan (Req 6.2),
-//   - carries a Selection_Index that is in range (Req 6.3).
+// Each hashed folder is seeded with BOTH a data file AND an `origin` file. After
+// deleting the selected folder its data is cleared but the sidecar remains, so
+// the folder STILL appears in the rebuilt list (same folder count) at a smaller
+// size and still resolves to its seeded domain (Req 6.1, 6.2, 6.3).
 //
 // _Requirements: 6.1, 6.2, 6.3_
 func TestApplyDelete_RescanAfterSuccessfulDeletion(t *testing.T) {
 	fake := fsx.NewFakeFS(t.TempDir())
 
-	// Seed hashed child folders with files of distinct sizes so each folder
-	// has SizeKB > 0 and the descending ordering is deterministic.
+	// Seed hashed child folders with data files of distinct sizes (so the
+	// descending ordering is deterministic) plus an origin sidecar each.
 	//
-	//   aaa -> ~3 KB  (largest)
-	//   bbb -> ~2 KB
-	//   ccc -> ~1 KB  (smallest)
+	//   aaa -> ~3 KB data  (largest)
+	//   bbb -> ~2 KB data
+	//   ccc -> ~1 KB data  (smallest)
 	seed := []struct {
 		hash  string
+		host  string
 		bytes int
 	}{
-		{"aaa", 3000},
-		{"bbb", 2000},
-		{"ccc", 1000},
+		{"aaa", "aaa.example", 3000},
+		{"bbb", "bbb.example", 2000},
+		{"ccc", "ccc.example", 1000},
 	}
 	for _, s := range seed {
-		rel := filepath.Join(containerSuffix, s.hash, "data.bin")
-		if _, err := fake.WriteFile(rel, make([]byte, s.bytes)); err != nil {
-			t.Fatalf("seeding %s: %v", s.hash, err)
+		dataRel := filepath.Join(containerSuffix, s.hash, "data.bin")
+		if _, err := fake.WriteFile(dataRel, make([]byte, s.bytes)); err != nil {
+			t.Fatalf("seeding %s data: %v", s.hash, err)
+		}
+		originRel := filepath.Join(containerSuffix, s.hash, "origin")
+		if _, err := fake.WriteFile(originRel, encodeOrigin("https", s.host)); err != nil {
+			t.Fatalf("seeding %s origin: %v", s.hash, err)
 		}
 	}
 
@@ -66,16 +87,29 @@ func TestApplyDelete_RescanAfterSuccessfulDeletion(t *testing.T) {
 
 	rebuilt := applyDelete(m, fake, base)
 
-	// The deleted folder's AbsPath is gone from the rebuilt list (Req 6.1).
-	for i, f := range rebuilt.folders {
-		if f.AbsPath == target.AbsPath {
-			t.Fatalf("deleted folder %q still present in rebuilt list at index %d", target.AbsPath, i)
-		}
+	// The folder still appears after a selective delete (its origin sidecar was
+	// preserved), so the count is unchanged (Req 6.1).
+	if got, want := len(rebuilt.folders), len(seed); got != want {
+		t.Fatalf("expected %d folders after selective deletion, got %d", want, got)
 	}
 
-	// The rebuilt list has one fewer folder than before.
-	if got, want := len(rebuilt.folders), len(seed)-1; got != want {
-		t.Fatalf("expected %d folders after deletion, got %d", want, got)
+	// Locate the deleted folder in the rebuilt list: it must still be present,
+	// its data gone (size shrank), and its domain preserved.
+	var found bool
+	for _, f := range rebuilt.folders {
+		if f.AbsPath != target.AbsPath {
+			continue
+		}
+		found = true
+		if f.SizeKB >= target.SizeKB {
+			t.Fatalf("deleted folder size did not shrink: before=%d after=%d", target.SizeKB, f.SizeKB)
+		}
+		if f.Domain != target.Domain {
+			t.Fatalf("deleted folder domain changed: before=%q after=%q", target.Domain, f.Domain)
+		}
+	}
+	if !found {
+		t.Fatalf("deleted folder %q should still be present after selective delete", target.AbsPath)
 	}
 
 	// The rebuilt list honours the Listing_Limit and descending-size ordering

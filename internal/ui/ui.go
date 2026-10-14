@@ -64,7 +64,7 @@ func FormatLine(folder model.ScannedFolder) string {
 // (case-insensitive, surrounding whitespace trimmed); anything else, including
 // EOF, returns false.
 func Confirm(w io.Writer, r io.Reader, folder model.ScannedFolder) bool {
-	fmt.Fprintf(w, "About to permanently delete:\n")
+	fmt.Fprintf(w, "About to clear this site's data (permanent, no undo); a tiny origin metadata marker is kept so the folder stays identifiable:\n")
 	fmt.Fprintf(w, "  Domain: %s\n", folder.Domain)
 	fmt.Fprintf(w, "  Hash:   %s\n", folder.Hash)
 	fmt.Fprintf(w, "  Size:   %s\n", FormatSize(folder.SizeKB))

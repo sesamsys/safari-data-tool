@@ -201,11 +201,11 @@ func runDelete(args []string, stdout, stderr io.Writer, stdin io.Reader, f fsx.F
 		}
 	}
 
-	if err := deleter.Delete(f, base, matched.AbsPath); err != nil {
+	if err := deleter.DeletePreservingOrigin(f, base, matched.AbsPath); err != nil {
 		fmt.Fprintf(stderr, "error: %v\n", err)
 		return 1
 	}
 
-	fmt.Fprintf(stdout, "Deleted %s (%s).\n", matched.Domain, matched.Hash)
+	fmt.Fprintf(stdout, "Cleared %s (%s); kept its origin metadata marker.\n", matched.Domain, matched.Hash)
 	return 0
 }

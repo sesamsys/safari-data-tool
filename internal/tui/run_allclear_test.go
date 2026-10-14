@@ -25,8 +25,11 @@ import (
 func TestRun_AllClearLoopReturnsZero(t *testing.T) {
 	fake := fsx.NewFakeFS(t.TempDir())
 
-	// Seed exactly one hashed child folder with a file so its recursive
-	// SizeKB > 0 and the initial scan yields a non-empty StatusOK list.
+	// Seed exactly one hashed child folder with a data file but NO `origin`
+	// sidecar so its recursive SizeKB > 0 and the initial scan yields a
+	// non-empty StatusOK list. Under the new default (preserve `origin`),
+	// all-clear now relies on this no-origin folder being FULLY removed by the
+	// selective delete (D2), leaving an empty re-scan that reaches modeAllClear.
 	rel := filepath.Join(containerSuffix, "onlyhash", "data.bin")
 	if _, err := fake.WriteFile(rel, make([]byte, 2000)); err != nil {
 		t.Fatalf("seeding the single folder: %v", err)

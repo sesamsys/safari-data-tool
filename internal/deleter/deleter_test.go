@@ -5,6 +5,7 @@
 package deleter_test
 
 import (
+	"encoding/binary"
 	"errors"
 	"os"
 	"path/filepath"
@@ -15,6 +16,8 @@ import (
 	"github.com/sesamsys/safari-data-tool/internal/deleter"
 	"github.com/sesamsys/safari-data-tool/internal/fsx"
 	"github.com/sesamsys/safari-data-tool/internal/model"
+	"github.com/sesamsys/safari-data-tool/internal/originparse"
+	"github.com/sesamsys/safari-data-tool/internal/sizer"
 )
 
 // quickConfig runs each property for at least 100 iterations, satisfying the
@@ -325,5 +328,238 @@ func TestDelete_RefusesOutsideBase(t *testing.T) {
 	}
 	if _, err := fake.Stat(base); err != nil {
 		t.Fatalf("base should still exist after refused delete: %v", err)
+	}
+}
+
+// ----------------------------------------------------------------------------
+// DeletePreservingOrigin — selective delete that keeps `origin` sidecars
+// Implements the new DEFAULT deletion behavior and extends the Property 10
+// safety guard (ValidatePath) to the selective path.
+// ----------------------------------------------------------------------------
+
+// encodeOrigin builds an origin-file body as a sequence of
+// [uint32 LE length N][1 flag byte 0x01][N UTF-8 bytes] records laid out as
+// (scheme, host) pairs, matching the scheme used in internal/cli/cli_test.go so
+// originparse.Resolve returns the host of the first pair.
+func encodeOrigin(records ...string) []byte {
+	var buf []byte
+	for _, r := range records {
+		var lenBytes [4]byte
+		binary.LittleEndian.PutUint32(lenBytes[:], uint32(len(r)))
+		buf = append(buf, lenBytes[:]...)
+		buf = append(buf, 0x01)
+		buf = append(buf, r...)
+	}
+	return buf
+}
+
+// statExists reports whether path exists on the fake FS.
+func statExists(f *fsx.FakeFS, path string) bool {
+	_, err := f.Stat(path)
+	return err == nil
+}
+
+// TestDeletePreservingOrigin_NestedOriginSurvives seeds a validated direct-child
+// target with a nested `origin` file plus sibling data files/dirs and asserts
+// that after the selective delete the `origin` file and its directory chain
+// survive, every non-origin entry is gone, the folder itself remains, and
+// originparse.Resolve still returns the seeded host (not UnknownDomain).
+func TestDeletePreservingOrigin_NestedOriginSurvives(t *testing.T) {
+	fake := fsx.NewFakeFS(t.TempDir())
+	base, err := fake.Mkdir("base")
+	if err != nil {
+		t.Fatalf("mkdir base: %v", err)
+	}
+	target := fake.Path("base/zerE8ilE")
+
+	// Nested origin several levels deep, plus data files and data dirs.
+	originRel := "base/zerE8ilE/JsRq/sub/origin"
+	if _, err := fake.WriteFile(originRel, encodeOrigin("https", "unifi.ui.com")); err != nil {
+		t.Fatalf("write origin: %v", err)
+	}
+	dataFiles := []string{
+		"base/zerE8ilE/cache.bin",
+		"base/zerE8ilE/JsRq/payload.dat",
+		"base/zerE8ilE/other/deep/blob.db",
+	}
+	for _, rel := range dataFiles {
+		if _, err := fake.WriteFile(rel, make([]byte, 4096)); err != nil {
+			t.Fatalf("write data %s: %v", rel, err)
+		}
+	}
+
+	if err := deleter.DeletePreservingOrigin(fake, base, target); err != nil {
+		t.Fatalf("DeletePreservingOrigin returned error: %v", err)
+	}
+
+	// The folder itself remains.
+	if !statExists(fake, target) {
+		t.Fatalf("target folder should remain after selective delete")
+	}
+	// The origin file and its directory chain survive.
+	originAbs := fake.Path(originRel)
+	if !statExists(fake, originAbs) {
+		t.Fatalf("origin file should survive, but is gone: %s", originAbs)
+	}
+	for _, rel := range []string{"base/zerE8ilE/JsRq", "base/zerE8ilE/JsRq/sub"} {
+		if !statExists(fake, fake.Path(rel)) {
+			t.Fatalf("directory on the origin path should survive: %s", rel)
+		}
+	}
+	// Every non-origin data file/dir is gone.
+	for _, rel := range dataFiles {
+		if statExists(fake, fake.Path(rel)) {
+			t.Fatalf("data file should be removed: %s", rel)
+		}
+	}
+	if statExists(fake, fake.Path("base/zerE8ilE/other")) {
+		t.Fatalf("non-origin directory tree should be removed: base/zerE8ilE/other")
+	}
+
+	// The folder still resolves to its domain, not UnknownDomain.
+	domain, _ := originparse.Resolve(fake, target)
+	if domain != "unifi.ui.com" {
+		t.Fatalf("Resolve = %q, want %q", domain, "unifi.ui.com")
+	}
+
+	// Size after delete is only the preserved origin block(s), not zero: data
+	// is gone but the sidecar remains.
+	size, err := sizer.SizeKB(fake, target)
+	if err != nil {
+		t.Fatalf("SizeKB: %v", err)
+	}
+	if size != 1 { // one small origin file rounds up to a single 1 KB block
+		t.Fatalf("post-delete size = %d KB, want 1 KB (only the origin sidecar)", size)
+	}
+}
+
+// TestDeletePreservingOrigin_MultipleOriginsSurvive seeds a target with two
+// `origin` files nested at different depths and asserts both survive while all
+// other data is removed.
+func TestDeletePreservingOrigin_MultipleOriginsSurvive(t *testing.T) {
+	fake := fsx.NewFakeFS(t.TempDir())
+	base, err := fake.Mkdir("base")
+	if err != nil {
+		t.Fatalf("mkdir base: %v", err)
+	}
+	target := fake.Path("base/hash")
+
+	origins := []string{
+		"base/hash/origin",             // at the top level
+		"base/hash/a/b/c/origin",       // deeply nested
+	}
+	for _, rel := range origins {
+		if _, err := fake.WriteFile(rel, encodeOrigin("https", "example.com")); err != nil {
+			t.Fatalf("write origin %s: %v", rel, err)
+		}
+	}
+	data := []string{
+		"base/hash/data1.bin",
+		"base/hash/a/data2.bin",
+		"base/hash/a/b/data3.bin",
+		"base/hash/x/y/data4.bin",
+	}
+	for _, rel := range data {
+		if _, err := fake.WriteFile(rel, make([]byte, 2048)); err != nil {
+			t.Fatalf("write data %s: %v", rel, err)
+		}
+	}
+
+	if err := deleter.DeletePreservingOrigin(fake, base, target); err != nil {
+		t.Fatalf("DeletePreservingOrigin returned error: %v", err)
+	}
+
+	for _, rel := range origins {
+		if !statExists(fake, fake.Path(rel)) {
+			t.Fatalf("origin should survive: %s", rel)
+		}
+	}
+	for _, rel := range data {
+		if statExists(fake, fake.Path(rel)) {
+			t.Fatalf("data should be removed: %s", rel)
+		}
+	}
+	if statExists(fake, fake.Path("base/hash/x")) {
+		t.Fatalf("non-origin dir tree should be removed: base/hash/x")
+	}
+}
+
+// TestDeletePreservingOrigin_NoOriginRemovesFolder documents D2: when the target
+// contains zero `origin` files there is nothing to preserve, so the whole
+// folder is removed (it disappears from the next scan).
+func TestDeletePreservingOrigin_NoOriginRemovesFolder(t *testing.T) {
+	fake := fsx.NewFakeFS(t.TempDir())
+	base, err := fake.Mkdir("base")
+	if err != nil {
+		t.Fatalf("mkdir base: %v", err)
+	}
+	target := fake.Path("base/hash")
+	for _, rel := range []string{"base/hash/data.bin", "base/hash/sub/more.bin"} {
+		if _, err := fake.WriteFile(rel, make([]byte, 1024)); err != nil {
+			t.Fatalf("write data %s: %v", rel, err)
+		}
+	}
+
+	if err := deleter.DeletePreservingOrigin(fake, base, target); err != nil {
+		t.Fatalf("DeletePreservingOrigin returned error: %v", err)
+	}
+
+	// D2: the entire folder is gone.
+	if _, err := fake.Stat(target); !os.IsNotExist(err) {
+		t.Fatalf("expected the whole no-origin folder to be removed, stat err=%v", err)
+	}
+}
+
+// TestDeletePreservingOrigin_RefusesOutsideBase asserts the extended safety
+// guard: targeting the base itself, a nested grandchild, a sibling of base, or a
+// `..` traversal escape is rejected with ErrPathUnsafe and removes NOTHING.
+func TestDeletePreservingOrigin_RefusesOutsideBase(t *testing.T) {
+	fake := fsx.NewFakeFS(t.TempDir())
+	base, err := fake.Mkdir("base")
+	if err != nil {
+		t.Fatalf("mkdir base: %v", err)
+	}
+	// A real direct child with an origin + data, used for the nested-grandchild
+	// case; it must be left completely intact when a refusal occurs.
+	if _, err := fake.WriteFile("base/child/origin", encodeOrigin("https", "example.com")); err != nil {
+		t.Fatalf("write child origin: %v", err)
+	}
+	if _, err := fake.WriteFile("base/child/data.bin", make([]byte, 2048)); err != nil {
+		t.Fatalf("write child data: %v", err)
+	}
+	// A sibling of base (under the fake root but not a child of base).
+	sibling := fake.Path("sibling")
+	if _, err := fake.WriteFile("sibling/keep.txt", []byte("keep")); err != nil {
+		t.Fatalf("write sibling: %v", err)
+	}
+
+	grandchild := fake.Path("base/child/sub") // nested descendant of base
+	if _, err := fake.Mkdir("base/child/sub"); err != nil {
+		t.Fatalf("mkdir grandchild: %v", err)
+	}
+	escape := filepath.Join(base, "child", "..", "..", "sibling") // `..` escape
+
+	cases := map[string]string{
+		"base itself":        base,
+		"nested grandchild":  grandchild,
+		"sibling of base":    sibling,
+		"traversal escape":   escape,
+	}
+	for name, target := range cases {
+		t.Run(name, func(t *testing.T) {
+			if err := deleter.DeletePreservingOrigin(fake, base, target); !errors.Is(err, deleter.ErrPathUnsafe) {
+				t.Fatalf("expected ErrPathUnsafe for %s, got %v", name, err)
+			}
+		})
+	}
+
+	// Nothing was touched by any refused call.
+	for _, rel := range []string{
+		"base/child", "base/child/origin", "base/child/data.bin", "base/child/sub",
+		"sibling", "sibling/keep.txt",
+	} {
+		if !statExists(fake, fake.Path(rel)) {
+			t.Fatalf("refused delete must not touch %s, but it is gone", rel)
+		}
 	}
 }

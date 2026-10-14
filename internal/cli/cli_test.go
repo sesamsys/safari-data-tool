@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -31,15 +32,50 @@ func encodeOrigin(records ...string) []byte {
 	return buf.Bytes()
 }
 
-// seedFolder writes an origin file for a hashed folder under the container
-// suffix of the fake tree and returns the absolute path of the hashed folder.
+// seedFolder writes an origin file plus a sibling data file for a hashed folder
+// under the container suffix of the fake tree and returns the absolute path of
+// the hashed folder. The data file lets tests assert that a selective delete
+// clears the data while preserving the origin sidecar.
 func seedFolder(t *testing.T, fake *fsx.FakeFS, hash, scheme, host string) string {
 	t.Helper()
 	rel := containerRel + "/" + hash + "/origin"
 	if _, err := fake.WriteFile(rel, encodeOrigin(scheme, host)); err != nil {
 		t.Fatalf("seed folder %s: %v", hash, err)
 	}
+	if _, err := fake.WriteFile(containerRel+"/"+hash+"/data.bin", make([]byte, 4096)); err != nil {
+		t.Fatalf("seed folder %s data: %v", hash, err)
+	}
 	return fake.Path(containerRel + "/" + hash)
+}
+
+// assertCleared verifies the new default deletion contract for a hashed folder:
+// the folder still exists, its origin sidecar is preserved, its sibling data
+// file is gone, and a fresh scan still resolves the folder to wantDomain (not
+// "Unknown Domain").
+func assertCleared(t *testing.T, fake *fsx.FakeFS, folder, wantDomain string) {
+	t.Helper()
+	if _, err := fake.Stat(folder); err != nil {
+		t.Fatalf("hashed folder should remain after clear: stat err=%v", err)
+	}
+	if _, err := fake.Stat(filepath.Join(folder, "origin")); err != nil {
+		t.Fatalf("origin sidecar should be preserved: stat err=%v", err)
+	}
+	if _, err := fake.Stat(filepath.Join(folder, "data.bin")); !os.IsNotExist(err) {
+		t.Fatalf("data file should be cleared: stat err=%v", err)
+	}
+	folders, _, err := scanner.Scan(fake, scanner.BasePath(fake.Root()))
+	if err != nil {
+		t.Fatalf("rescan after clear: %v", err)
+	}
+	var resolved string
+	for _, f := range folders {
+		if f.AbsPath == folder {
+			resolved = f.Domain
+		}
+	}
+	if resolved != wantDomain {
+		t.Fatalf("rescan resolved folder to %q, want %q", resolved, wantDomain)
+	}
 }
 
 // newPopulatedFake builds a fake FS with two hashed folders and returns it. The
@@ -99,13 +135,12 @@ func TestRun_RoutesToDelete(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0; stderr=%q", code, stderr.String())
 	}
-	// Deletion behavior, not listing: the folder is gone and stdout reports
-	// the delete rather than a listing of both folders.
-	if _, err := fake.Stat(folder); !os.IsNotExist(err) {
-		t.Fatalf("folder still exists after delete routing: stat err=%v", err)
-	}
-	if !strings.Contains(stdout.String(), "Deleted") {
-		t.Fatalf("expected delete confirmation on stdout, got:\n%s", stdout.String())
+	// Deletion behavior, not listing: under the new default the hashed folder
+	// REMAINS (its origin sidecar is preserved) but its data is cleared, and
+	// stdout reports the clear rather than a listing of both folders.
+	assertCleared(t, fake, folder, "example.com")
+	if !strings.Contains(stdout.String(), "Cleared") {
+		t.Fatalf("expected clear confirmation on stdout, got:\n%s", stdout.String())
 	}
 	if strings.Contains(stdout.String(), "BBBB2222") {
 		t.Fatalf("delete flow unexpectedly listed other folders:\n%s", stdout.String())
@@ -164,9 +199,8 @@ func TestRun_DeleteByDomainForce(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0; stderr=%q", code, stderr.String())
 	}
-	if _, err := fake.Stat(folder); !os.IsNotExist(err) {
-		t.Fatalf("folder should be deleted, stat err=%v", err)
-	}
+	// New default: the folder's data is cleared but it remains resolvable.
+	assertCleared(t, fake, folder, "example.com")
 }
 
 func TestRun_DeleteByHashYesAlias(t *testing.T) {
@@ -183,9 +217,8 @@ func TestRun_DeleteByHashYesAlias(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0; stderr=%q", code, stderr.String())
 	}
-	if _, err := fake.Stat(folder); !os.IsNotExist(err) {
-		t.Fatalf("folder should be deleted, stat err=%v", err)
-	}
+	// New default: the folder's data is cleared but it remains resolvable.
+	assertCleared(t, fake, folder, "unifi.ui.com")
 }
 
 func TestRun_DeleteNoMatch(t *testing.T) {
@@ -247,8 +280,64 @@ func TestRun_DeleteConfirmed(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit = %d, want 0 for confirmed delete; stderr=%q", code, stderr.String())
 	}
-	if _, err := fake.Stat(folder); !os.IsNotExist(err) {
-		t.Fatalf("folder should be deleted on confirm, stat err=%v", err)
+	// New default: on confirm the folder's data is cleared but it remains
+	// resolvable (its origin sidecar is preserved).
+	assertCleared(t, fake, folder, "example.com")
+}
+
+// TestRun_DeleteNestedOriginSurvives seeds a hashed folder whose `origin`
+// sidecar is deeply nested (hash/sub/dir/origin) alongside data, force-deletes
+// it, and asserts the nested origin survived, the data is gone, and a fresh
+// scan still resolves the folder's domain (not "Unknown Domain").
+func TestRun_DeleteNestedOriginSurvives(t *testing.T) {
+	fake := fsx.NewFakeFS(t.TempDir())
+	hash := "CCCC3333"
+	folder := fake.Path(containerRel + "/" + hash)
+	nestedOrigin := containerRel + "/" + hash + "/sub/dir/origin"
+	if _, err := fake.WriteFile(nestedOrigin, encodeOrigin("https", "nested.example")); err != nil {
+		t.Fatalf("seed nested origin: %v", err)
+	}
+	dataRel := containerRel + "/" + hash + "/cache/data.bin"
+	if _, err := fake.WriteFile(dataRel, make([]byte, 4096)); err != nil {
+		t.Fatalf("seed data: %v", err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	code := run(
+		[]string{"prog", "delete", "--hash", hash, "--force"},
+		&stdout, &stderr, strings.NewReader(""), fake, fake.Root(),
+	)
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0; stderr=%q", code, stderr.String())
+	}
+
+	// The deeply nested origin survived; the data is gone; the folder remains.
+	if _, err := fake.Stat(folder); err != nil {
+		t.Fatalf("folder should remain after clear: stat err=%v", err)
+	}
+	if _, err := fake.Stat(fake.Path(nestedOrigin)); err != nil {
+		t.Fatalf("nested origin should be preserved: stat err=%v", err)
+	}
+	if _, err := fake.Stat(fake.Path(dataRel)); !os.IsNotExist(err) {
+		t.Fatalf("data should be cleared: stat err=%v", err)
+	}
+	if _, err := fake.Stat(fake.Path(containerRel + "/" + hash + "/cache")); !os.IsNotExist(err) {
+		t.Fatalf("non-origin data dir should be removed: stat err=%v", err)
+	}
+
+	// A fresh scan still resolves the folder to its domain.
+	folders, _, err := scanner.Scan(fake, scanner.BasePath(fake.Root()))
+	if err != nil {
+		t.Fatalf("rescan: %v", err)
+	}
+	var resolved string
+	for _, f := range folders {
+		if f.AbsPath == folder {
+			resolved = f.Domain
+		}
+	}
+	if resolved != "nested.example" {
+		t.Fatalf("rescan resolved folder to %q, want %q", resolved, "nested.example")
 	}
 }
 

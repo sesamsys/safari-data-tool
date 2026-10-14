@@ -149,7 +149,7 @@ func (m Model) handleKey(k Key) (Model, action) {
 // returns to the list without changing the folder set (Req 5.5).
 func applyDelete(m Model, f fsx.FileSystem, base string) Model {
 	target := m.folders[m.index]
-	if err := deleter.Delete(f, base, target.AbsPath); err != nil {
+	if err := deleter.DeletePreservingOrigin(f, base, target.AbsPath); err != nil {
 		m.mode = modeList
 		m.errMsg = err.Error()
 		return m

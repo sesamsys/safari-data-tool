@@ -8,8 +8,11 @@ cleaned up.
 The tool scans the per-domain data folders Safari stores under its container,
 resolves each hashed folder name to a human-readable domain by parsing the
 plaintext `origin` files WebKit writes, reports accurate recursive folder sizes
-(`du`-style), and lets you permanently delete a specific site's data by domain
-name or hash with a confirmation safeguard.
+(`du`-style), and lets you clear a specific site's data by domain name or hash
+with a confirmation safeguard. By default, deletion clears the site's data while
+preserving the tiny `origin` metadata sidecar, so the now-small folder stays
+identifiable to its domain on the next scan instead of becoming
+"Unknown Domain".
 
 ## Requirements
 
@@ -74,12 +77,33 @@ folders and reports an empty listing with a message that this likely requires
 Full Disk Access. If you see that, grant access to your terminal app, then quit
 and reopen the terminal so the new permission takes effect.
 
-## ⚠️ Deletion is permanent and irreversible
+## "Unknown Domain" after deleting and recreating a folder
 
-Deleting a folder permanently and irreversibly removes it. There is **no undo**,
-and nothing is moved to the Trash. Once a domain's data is deleted it cannot be
-recovered. Always double-check the domain or hash before confirming — and before
-using `--force`, which deletes without any prompt.
+The tool resolves a hashed folder's domain solely by reading the plaintext
+`origin` sidecar file that WebKit writes inside that folder. By default the tool
+preserves this sidecar on delete, so a folder you clear with this tool stays
+resolvable to its domain.
+
+WebKit itself writes the sidecar lazily. If a folder's `origin` sidecar is
+missing — for example because WebKit recreated the folder's storage from scratch
+(reloading a page can repopulate data before the sidecar is written back) — the
+tool cannot name the origin and lists it as **Unknown Domain**, even though the
+hash is unchanged.
+
+Observed behavior on macOS WebKit: a page reload within a running Safari
+session does not restore a missing sidecar, and neither does quitting Safari.
+WebKit rewrites the `origin` file on a **restart-and-reaccess** — launching
+Safari and visiting the site again. After that the tool resolves the domain
+normally. This is inherent WebKit lazy-write behavior, not an error in the tool.
+
+## ⚠️ Clearing a site's data is permanent and irreversible
+
+Clearing a folder permanently and irreversibly removes the site's data. There is
+**no undo**, and nothing is moved to the Trash. Once a domain's data is cleared
+it cannot be recovered. The tiny `origin` metadata marker and the folder itself
+remain so the folder stays identifiable, but the data is gone. Always
+double-check the domain or hash before confirming — and before using `--force`,
+which clears without any prompt.
 
 ## License
 

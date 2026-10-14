@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Deletion now preserves `origin` metadata sidecar files by default: the
+  `delete` command and the TUI delete action clear a hashed folder's site data
+  while keeping every file named `origin` (and the directory path leading to
+  each). The now-tiny folder remains and stays resolvable to its domain on the
+  next scan instead of becoming "Unknown Domain". A folder with no `origin`
+  sidecar is still removed entirely. The permanence/irreversibility warning now
+  applies to the cleared data; the folder and its tiny marker are kept.
+
+### Documentation
+
+- Documented the transient "Unknown Domain" state: because the tool resolves a
+  folder's domain only from WebKit's plaintext `origin` sidecar, a folder that
+  is deleted and then recreated by the site can show as "Unknown Domain" until
+  WebKit lazily rewrites that sidecar — which happens on a Safari
+  restart-and-reaccess, not on a page reload or a clean quit. This is inherent
+  WebKit behavior, not a tool error.
+
 ## [0.2.0] - 2026-10-14
 
 ### Added
