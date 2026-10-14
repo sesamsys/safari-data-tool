@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-14
+
+### Added
+
+- Interactive TUI mode: running the tool with no subcommand now launches a
+  full-screen terminal browser of the largest Safari website-data folders.
+  Navigate with the arrow keys (wrap-around at both ends) and delete the
+  selected folder after an in-screen confirmation showing its domain, hash,
+  and size. After a deletion the list re-scans and rebuilds; clearing every
+  folder shows an all-clear empty state rather than the Full Disk Access
+  guidance. Press `q` to quit, which restores the terminal to its prior mode.
+- Context-sensitive key legend: the list view shows the move/delete/quit keys,
+  and the confirmation prompt shows the confirm/cancel keys above the prompt
+  line.
+
+### Changed
+
+- A bare invocation now launches the interactive TUI instead of printing the
+  listing. The non-interactive listing is still available via the explicit
+  `list` subcommand, and `delete` is unchanged.
+
+### Notes
+
+- The TUI is macOS-only and uses hand-written ANSI escape sequences with raw
+  `termios` control through the standard library only (no new dependencies).
+
 ## [0.1.0] - 2026-10-13
 
 ### Added
@@ -40,5 +66,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `darwin/arm64` archives with checksums, plus a GitHub Actions workflow that
   releases on `v*` tags.
 
-[Unreleased]: https://github.com/sesamsys/safari-data-tool/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/sesamsys/safari-data-tool/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/sesamsys/safari-data-tool/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/sesamsys/safari-data-tool/releases/tag/v0.1.0
