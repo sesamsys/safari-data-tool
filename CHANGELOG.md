@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `--version` / `-v` flag: running the tool with `--version` or `-v` as the
+  first argument prints the executable's version to stdout and exits, without
+  launching the TUI or scanning the Safari container. Release builds report the
+  tag version (injected via GoReleaser ldflags); a plain `go build` reports
+  `dev`.
+
 ### Documentation
 
 - Corrected the README Usage section, which had drifted from actual behavior: a
