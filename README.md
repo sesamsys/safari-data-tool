@@ -39,32 +39,42 @@ go install github.com/sesamsys/safari-data-tool@latest
 
 ## Usage
 
-If you run the tool with no subcommand, it defaults to listing.
+Running the tool with no subcommand launches the interactive TUI, a
+full-screen browser of the largest Safari website-data folders. The `list` and
+`delete` subcommands provide the equivalent non-interactive flows.
 
 ```sh
-# List the 15 largest folders (default — bare invocation also lists)
+# Launch the interactive TUI (default — bare invocation)
+safari-data-tool
+
+# List the 15 largest folders (non-interactive)
 safari-data-tool list
 
 # List the 30 largest
 safari-data-tool list -n 30
 
-# Delete a specific domain's data (prompts for confirmation)
+# Clear a specific domain's data (prompts for confirmation)
 safari-data-tool delete --domain www.gstatic.com
 
-# Delete by hash without prompting
+# Clear by hash without prompting
 safari-data-tool delete --hash <hash> --force
 ```
 
 Notes:
 
-- A bare invocation (`safari-data-tool`, no subcommand) behaves the same as
-  `safari-data-tool list`.
+- A bare invocation (`safari-data-tool`, no subcommand) launches the
+  interactive TUI. Navigate with the arrow keys and clear the selected folder
+  after an in-screen confirmation; press `q` to quit.
 - `list` accepts `-n <count>` to control how many of the largest folders to
   show (default 15). If the count exceeds the number of folders available, all
   of them are listed.
 - `delete` requires at least one of `--domain` or `--hash`. If both are given,
   the target must match both.
 - Pass `--force` (or `--yes`) to skip the interactive confirmation prompt.
+- Clearing a folder (via `delete` or the TUI) removes the site's data but keeps
+  the tiny `origin` metadata sidecar by default, so the now-small folder stays
+  resolvable to its domain. A folder with no `origin` sidecar is removed
+  entirely.
 
 ## Full Disk Access
 

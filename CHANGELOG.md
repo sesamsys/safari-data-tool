@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+
+- Corrected the README Usage section, which had drifted from actual behavior: a
+  bare invocation launches the interactive TUI (not a listing, which was the
+  pre-0.2.0 behavior), and the delete examples/notes now describe the
+  clear-data-keep-`origin`-sidecar default introduced in 0.3.0.
+
 ## [0.3.0] - 2026-10-14
 
 ### Changed
