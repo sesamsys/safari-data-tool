@@ -341,6 +341,69 @@ func TestRun_DeleteNestedOriginSurvives(t *testing.T) {
 	}
 }
 
+// --- 5. Version flag -----------------------------------------------------
+
+// TestRun_VersionFlag covers --version and -v as the first argument: each
+// prints "safari-data-tool dev" to stdout, exits 0, writes nothing to stderr,
+// and does NOT scan/list the seeded folders (no TUI, no filesystem scan).
+func TestRun_VersionFlag(t *testing.T) {
+	for _, flag := range []string{"--version", "-v"} {
+		t.Run(flag, func(t *testing.T) {
+			fake := newPopulatedFake(t)
+			var stdout, stderr bytes.Buffer
+
+			code := run([]string{"prog", flag}, &stdout, &stderr, strings.NewReader(""), fake, fake.Root())
+
+			if code != 0 {
+				t.Fatalf("exit = %d, want 0; stderr=%q", code, stderr.String())
+			}
+			if got, want := stdout.String(), "safari-data-tool dev\n"; got != want {
+				t.Fatalf("stdout = %q, want %q", got, want)
+			}
+			if stderr.Len() != 0 {
+				t.Fatalf("expected nothing on stderr, got:\n%s", stderr.String())
+			}
+			// No scan/listing occurred.
+			if strings.Contains(stdout.String(), "example.com") || strings.Contains(stdout.String(), "AAAA1111") {
+				t.Fatalf("version path unexpectedly listed seeded folders:\n%s", stdout.String())
+			}
+		})
+	}
+}
+
+// TestRun_VersionFlagEmptyFS proves the version path works with a fresh,
+// unseeded fake FS: it still exits 0 and prints the version without scanning.
+func TestRun_VersionFlagEmptyFS(t *testing.T) {
+	fake := fsx.NewFakeFS(t.TempDir())
+	var stdout, stderr bytes.Buffer
+
+	code := run([]string{"prog", "--version"}, &stdout, &stderr, strings.NewReader(""), fake, fake.Root())
+
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0; stderr=%q", code, stderr.String())
+	}
+	if got, want := stdout.String(), "safari-data-tool dev\n"; got != want {
+		t.Fatalf("stdout = %q, want %q", got, want)
+	}
+}
+
+// TestRun_VersionFlagNotFirstArgIgnored locks in requirement 3: a "-v" that is
+// not the first argument is not a version request. For "list -v", list's flag
+// set rejects the unknown flag (exit 2) and the version line is never printed.
+func TestRun_VersionFlagNotFirstArgIgnored(t *testing.T) {
+	fake := newPopulatedFake(t)
+	var stdout, stderr bytes.Buffer
+
+	code := run([]string{"prog", "list", "-v"}, &stdout, &stderr, strings.NewReader(""), fake, fake.Root())
+
+	if code != 2 {
+		t.Fatalf("exit = %d, want 2 for unknown flag", code)
+	}
+	if strings.Contains(stdout.String(), "safari-data-tool dev") {
+		t.Fatalf("version line should not be printed when -v is not the first arg:\n%s", stdout.String())
+	}
+}
+
 // Guard: confirm BasePath wiring assumption so the fixtures stay valid if the
 // container suffix ever changes.
 func TestBasePathMatchesContainerRel(t *testing.T) {

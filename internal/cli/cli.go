@@ -21,6 +21,11 @@ import (
 	"github.com/sesamsys/safari-data-tool/internal/ui"
 )
 
+// version is the executable's version string. It defaults to "dev" and is set
+// at build time via
+// -ldflags "-X github.com/sesamsys/safari-data-tool/internal/cli.version=...".
+var version = "dev"
+
 // defaultListingCount is the number of largest folders shown when the operator
 // does not pass -n (Req 1.1).
 const defaultListingCount = 15
@@ -33,6 +38,13 @@ const (
 	cmdList                  // explicit "list" subcommand
 	cmdDelete                // explicit "delete" subcommand
 )
+
+// isVersionRequest reports whether the invocation is a version request, i.e.
+// the first argument is "--version" or "-v". Restricting to args[1] ensures a
+// later "-v" (e.g. a subcommand flag) never triggers the version output.
+func isVersionRequest(args []string) bool {
+	return len(args) > 1 && (args[1] == "--version" || args[1] == "-v")
+}
 
 // classify picks the command from os.Args-style arguments. args[0] is the
 // program name. A first argument of "list" or "delete" selects that
@@ -69,6 +81,10 @@ func Run(args []string) int {
 // into both flows for a uniform core; the list flow ignores it, while the
 // delete flow reads it for the confirmation prompt.
 func run(args []string, stdout, stderr io.Writer, stdin io.Reader, f fsx.FileSystem, home string) int {
+	if isVersionRequest(args) {
+		fmt.Fprintln(stdout, "safari-data-tool "+version)
+		return 0
+	}
 	switch classify(args) {
 	case cmdList:
 		return runList(args, stdout, stderr, stdin, f, home)
