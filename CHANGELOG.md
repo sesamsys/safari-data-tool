@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   bare invocation launches the interactive TUI (not a listing, which was the
   pre-0.2.0 behavior), and the delete examples/notes now describe the
   clear-data-keep-`origin`-sidecar default introduced in 0.3.0.
+- Trimmed the standalone "Unknown Domain" README section to a single Usage
+  note. Since 0.3.0 preserves the `origin` sidecar on delete, the detailed
+  WebKit lazy-write explanation no longer warrants a top-level section; the
+  remaining edge case (WebKit recreating a folder from scratch) is now a brief
+  note.
 
 ## [0.3.0] - 2026-10-14
 

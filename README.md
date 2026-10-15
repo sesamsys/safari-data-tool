@@ -75,6 +75,11 @@ Notes:
   the tiny `origin` metadata sidecar by default, so the now-small folder stays
   resolvable to its domain. A folder with no `origin` sidecar is removed
   entirely.
+- A folder occasionally lists as **Unknown Domain** when WebKit has recreated
+  its storage from scratch but not yet written the `origin` sidecar back —
+  WebKit writes it lazily, typically after a Safari restart-and-reaccess rather
+  than on a page reload. Folders you clear with this tool keep their sidecar and
+  stay resolvable. This is inherent WebKit behavior, not an error in the tool.
 
 ## Full Disk Access
 
@@ -86,25 +91,6 @@ Without this permission the Safari container reads as empty: the tool sees zero
 folders and reports an empty listing with a message that this likely requires
 Full Disk Access. If you see that, grant access to your terminal app, then quit
 and reopen the terminal so the new permission takes effect.
-
-## "Unknown Domain" after deleting and recreating a folder
-
-The tool resolves a hashed folder's domain solely by reading the plaintext
-`origin` sidecar file that WebKit writes inside that folder. By default the tool
-preserves this sidecar on delete, so a folder you clear with this tool stays
-resolvable to its domain.
-
-WebKit itself writes the sidecar lazily. If a folder's `origin` sidecar is
-missing — for example because WebKit recreated the folder's storage from scratch
-(reloading a page can repopulate data before the sidecar is written back) — the
-tool cannot name the origin and lists it as **Unknown Domain**, even though the
-hash is unchanged.
-
-Observed behavior on macOS WebKit: a page reload within a running Safari
-session does not restore a missing sidecar, and neither does quitting Safari.
-WebKit rewrites the `origin` file on a **restart-and-reaccess** — launching
-Safari and visiting the site again. After that the tool resolves the domain
-normally. This is inherent WebKit lazy-write behavior, not an error in the tool.
 
 ## ⚠️ Clearing a site's data is permanent and irreversible
 
