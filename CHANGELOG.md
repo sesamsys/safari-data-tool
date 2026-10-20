@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `install.sh` one-line installer: a POSIX-sh script that detects the macOS
+  architecture, resolves the latest release via the GitHub `releases/latest`
+  redirect, downloads the matching GoReleaser archive, verifies its SHA-256
+  against `checksums.txt`, installs the binary to `~/.local/bin` (overridable
+  via `INSTALL_DIR`, no `sudo` required), and adds that directory to `PATH` in
+  the login shell's profile. A `VERSION` override pins a specific release tag.
+  Full Disk Access still has to be granted manually (macOS TCC), which the
+  script prints as the final step.
+
+### Documentation
+
+- Reworked the README install instructions into an "Install" section leading
+  with the `curl | sh` one-liner and the installer's `INSTALL_DIR`/`VERSION`
+  overrides, with the previous `go build` / `go install` steps kept under a
+  "Build from source" subsection.
+
 ## [0.3.1] - 2026-10-16
 
 ### Added

@@ -20,7 +20,31 @@ identifiable to its domain on the next scan instead of becoming
   Safari container layout and is not meant to run on other platforms.
 - **Full Disk Access** granted to your terminal application (see below).
 
-## Build & install
+## Install
+
+The quickest way on macOS is the install script. It detects your architecture,
+downloads the latest release, verifies its checksum, installs the binary to
+`~/.local/bin`, and adds that directory to your `PATH`:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/sesamsys/safari-data-tool/main/install.sh | sh
+```
+
+After it finishes, grant **Full Disk Access** to your terminal app (see below),
+then quit and reopen the terminal. Verify with:
+
+```sh
+safari-data-tool --version
+```
+
+The script accepts a couple of environment overrides:
+
+- `INSTALL_DIR` — target bin directory (default `~/.local/bin`; no `sudo`
+  needed). Set `INSTALL_DIR=/usr/local/bin` for the system location.
+- `VERSION` — a specific release tag to install, e.g. `VERSION=v0.2.0`
+  (default: latest).
+
+### Build from source
 
 The binary is built as a pure-Go binary with CGO disabled, so there is no C
 toolchain dependency and the result is a single self-contained executable.
