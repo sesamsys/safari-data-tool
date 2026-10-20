@@ -20,8 +20,11 @@
 # read Safari's container. See the README for details.
 #
 # Environment overrides:
-#   INSTALL_DIR   Target bin directory (default: ~/.local/bin).
-#   VERSION       Release tag to install, e.g. v0.2.0 (default: latest).
+#   INSTALL_DIR      Target bin directory (default: ~/.local/bin).
+#   VERSION          Release tag to install, e.g. v0.2.0 (default: latest).
+#   SKIP_PATH_SETUP  If set to a non-empty value, install the binary but do NOT
+#                    modify any shell profile. Useful for throwaway test runs
+#                    (e.g. installing into a temp INSTALL_DIR).
 
 set -eu
 
@@ -29,6 +32,7 @@ REPO="sesamsys/safari-data-tool"
 BINARY="safari-data-tool"
 INSTALL_DIR="${INSTALL_DIR:-$HOME/.local/bin}"
 VERSION="${VERSION:-latest}"
+SKIP_PATH_SETUP="${SKIP_PATH_SETUP:-}"
 
 # ---- helpers ---------------------------------------------------------------
 
@@ -133,14 +137,28 @@ info "Installed $INSTALL_DIR/$BINARY"
 
 add_path_line="export PATH=\"$INSTALL_DIR:\$PATH\""
 
-case ":$PATH:" in
-*":$INSTALL_DIR:"*)
+if [ -n "$SKIP_PATH_SETUP" ]; then
+	# Explicitly asked not to touch any shell profile (e.g. a test run into a
+	# temp dir). Just tell the user how to reach the binary.
 	on_path=1
-	;;
-*)
-	on_path=0
-	;;
-esac
+	info "SKIP_PATH_SETUP set — not modifying any shell profile."
+	case ":$PATH:" in
+	*":$INSTALL_DIR:"*) ;;
+	*)
+		info "To run $BINARY, use its full path or add it to PATH:"
+		info "    export PATH=\"$INSTALL_DIR:\$PATH\""
+		;;
+	esac
+else
+	case ":$PATH:" in
+	*":$INSTALL_DIR:"*)
+		on_path=1
+		;;
+	*)
+		on_path=0
+		;;
+	esac
+fi
 
 if [ "$on_path" -eq 0 ]; then
 	# Pick a profile file for the current login shell.

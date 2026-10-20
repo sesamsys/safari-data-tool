@@ -37,12 +37,20 @@ then quit and reopen the terminal. Verify with:
 safari-data-tool --version
 ```
 
-The script accepts a couple of environment overrides:
+The script accepts a few environment overrides:
 
 - `INSTALL_DIR` — target bin directory (default `~/.local/bin`; no `sudo`
   needed). Set `INSTALL_DIR=/usr/local/bin` for the system location.
 - `VERSION` — a specific release tag to install, e.g. `VERSION=v0.2.0`
   (default: latest).
+- `SKIP_PATH_SETUP` — set to any non-empty value to install the binary without
+  modifying any shell profile. Handy for a throwaway test install into a temp
+  directory:
+
+  ```sh
+  INSTALL_DIR="$(mktemp -d)/bin" SKIP_PATH_SETUP=1 \
+    sh -c 'curl -fsSL https://raw.githubusercontent.com/sesamsys/safari-data-tool/main/install.sh | sh'
+  ```
 
 ### Build from source
 

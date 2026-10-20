@@ -16,7 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   via `INSTALL_DIR`, no `sudo` required), and adds that directory to `PATH` in
   the login shell's profile. A `VERSION` override pins a specific release tag.
   Full Disk Access still has to be granted manually (macOS TCC), which the
-  script prints as the final step.
+  script prints as the final step. A `SKIP_PATH_SETUP` override installs the
+  binary without touching any shell profile, for throwaway test installs into a
+  temporary `INSTALL_DIR`.
 
 ### Documentation
 
