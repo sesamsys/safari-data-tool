@@ -92,7 +92,7 @@ fi
 # Release tags are "vX.Y.Z"; GoReleaser archive names use the bare "X.Y.Z".
 version="${tag#v}"
 
-archive="${BINARY}_${version}_Darwin_${goarch}.tar.gz"
+archive="${BINARY}_${version}_darwin_${goarch}.tar.gz"
 base_url="https://github.com/$REPO/releases/download/$tag"
 
 info "Installing $BINARY $tag ($goarch) to $INSTALL_DIR"
