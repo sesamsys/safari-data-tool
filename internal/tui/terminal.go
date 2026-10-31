@@ -113,7 +113,10 @@ func (t *osTerminal) MakeRaw() (func() error, error) {
 	raw.Iflag &^= maskBRKINT | maskICRNL | maskINPCK | maskISTRIP | maskIXON
 	// Clear output post-processing.
 	raw.Oflag &^= maskOPOST
-	// Block for at least one byte with no inter-byte timeout.
+	// First-byte mode: block for at least one byte with no inter-byte timeout
+	// so an idle list screen waits cleanly with no CPU spin. The ESC
+	// continuation reads switch to a timed mode (see readContinuationMode) so a
+	// lone ESC resolves on its own instead of blocking forever.
 	raw.Cc[ccVMIN] = 1
 	raw.Cc[ccVTIME] = 0
 
@@ -128,8 +131,41 @@ func (t *osTerminal) MakeRaw() (func() error, error) {
 	return restore, nil
 }
 
-// ReadKey reads one byte from stdin and, when it is ESC (0x1B), reads up to two
-// more bytes to complete an arrow escape sequence, then delegates to decodeKey.
+// maxEscSeqLen caps how many continuation bytes are collected after an ESC
+// before decoding. A CSI arrow is ESC '[' A/B (3 bytes); longer sequences
+// (function keys, mouse reports, longer CSI) are drained up to this cap so the
+// byte stream stays in sync for the next keypress instead of desyncing on the
+// old hard-coded 3-byte boundary. The decoder only recognizes the 3-byte arrow
+// form, so anything else still decodes to KeyOther; the cap just bounds the
+// drain.
+const maxEscSeqLen = 8
+
+// setReadContinuationMode switches stdin to the ESC-continuation termios mode:
+// VMIN=0, VTIME=1 (0.1s inter-byte timeout). A continuation read that returns
+// zero bytes then means "no more bytes arrived" (standalone ESC or end of a
+// sequence) rather than blocking forever. It returns a restore func that puts
+// stdin back into first-byte mode (VMIN=1, VTIME=0).
+func (t *osTerminal) setReadContinuationMode() (restore func() error, err error) {
+	var tc termios
+	if err := ioctl(t.fd, tiocGETA, &tc); err != nil {
+		return nil, err
+	}
+	firstByte := tc // VMIN=1, VTIME=0 as set by MakeRaw
+	tc.Cc[ccVMIN] = 0
+	tc.Cc[ccVTIME] = 1
+	if err := ioctl(t.fd, tiocSETA, &tc); err != nil {
+		return nil, err
+	}
+	return func() error {
+		fb := firstByte
+		return ioctl(t.fd, tiocSETA, &fb)
+	}, nil
+}
+
+// ReadKey blocks (VMIN=1, VTIME=0) for the first byte of a keypress, then hands
+// off to assembleKey. For an ESC first byte, assembleKey drains continuation
+// bytes using a timed reader so a lone ESC — or any non-arrow escape sequence —
+// resolves promptly instead of blocking forever (the long-run freeze fix).
 func (t *osTerminal) ReadKey() (Key, error) {
 	var buf [1]byte
 	if _, err := os.Stdin.Read(buf[:]); err != nil {
@@ -139,18 +175,56 @@ func (t *osTerminal) ReadKey() (Key, error) {
 		return decodeKey(buf[:1]), nil
 	}
 
-	// ESC: read up to two more bytes to form the three-byte CSI sequence.
-	seq := []byte{0x1b}
-	var next [1]byte
-	for len(seq) < 3 {
+	// ESC first byte: switch to the timed continuation mode for the drain so a
+	// standalone ESC does not park the event loop, then restore first-byte mode.
+	restore, err := t.setReadContinuationMode()
+	if err != nil {
+		return KeyNone, err
+	}
+	defer restore()
+
+	readByte := func() (byte, bool, error) {
+		var next [1]byte
 		n, err := os.Stdin.Read(next[:])
+		if err != nil {
+			return 0, false, err
+		}
+		if n == 0 { // VTIME expired with no byte: nothing more to read
+			return 0, false, nil
+		}
+		return next[0], true, nil
+	}
+	return assembleKey(buf[0], readByte)
+}
+
+// assembleKey decodes one keypress given an already-read first byte and a
+// timed continuation reader. It is the pure, TTY-free seam under test: it never
+// touches os.Stdin or ioctls, so a unit test can feed it scripted bytes plus a
+// timeout signal and assert the decode without a real terminal.
+//
+// readByte reports (b, true, nil) for a byte that arrived, (0, false, nil) when
+// the inter-byte timeout expired with no byte (standalone ESC or end of a
+// sequence), and (0, false, err) on a read error.
+//
+// For a non-ESC first byte it decodes the single byte directly. For ESC it
+// collects continuation bytes up to maxEscSeqLen until the reader times out,
+// then decodes the whole buffer. A lone ESC (reader times out immediately)
+// returns promptly with decodeKey([]byte{0x1b}) — KeyOther today — and never
+// loops forever.
+func assembleKey(first byte, readByte func() (byte, bool, error)) (Key, error) {
+	if first != 0x1b {
+		return decodeKey([]byte{first}), nil
+	}
+	seq := []byte{0x1b}
+	for len(seq) < maxEscSeqLen {
+		b, ok, err := readByte()
 		if err != nil {
 			return KeyNone, err
 		}
-		if n == 0 {
+		if !ok { // timed out: lone ESC or sequence complete
 			break
 		}
-		seq = append(seq, next[0])
+		seq = append(seq, b)
 	}
 	return decodeKey(seq), nil
 }

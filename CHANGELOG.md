@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- TUI no longer freezes after a long idle run: the raw-mode reader now drains an
+  ESC sequence using a termios inter-byte timeout (VMIN=0, VTIME=1) instead of
+  blocking on a fixed 3-byte read, so a lone ESC or any non-arrow escape
+  sequence resolves promptly rather than parking the event loop.
+
 ### Added
 
 - `install.sh` one-line installer: a POSIX-sh script that detects the macOS
