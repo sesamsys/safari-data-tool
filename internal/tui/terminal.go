@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"io"
 	"os"
 	"syscall"
 	"unsafe"
@@ -162,6 +163,36 @@ func (t *osTerminal) setReadContinuationMode() (restore func() error, err error)
 	}, nil
 }
 
+// timedReadByte adapts an io.Reader to the continuation-reader contract that
+// assembleKey expects: it returns (b, true, nil) when a byte arrives, (0, false,
+// nil) when no more bytes arrived, and (0, false, err) on a real read error.
+//
+// The subtlety it papers over is that os.File.Read reports a zero-byte timed
+// read as io.EOF. On a terminal in raw VTIME-timed mode (VMIN=0, VTIME=1) a
+// zero-byte read means the inter-byte timer expired with no more bytes — i.e.
+// the escape sequence is complete — but os.Stdin is constructed with
+// ZeroReadIsEOF=true, so internal/poll.eofError converts that (0, nil) read
+// into io.EOF. Without translating io.EOF back into the "timeout" signal the
+// continuation drain would treat the end of every arrow sequence as a fatal
+// read error and quit the app. Genuine stdin closure is still caught by the
+// blocking first-byte read in ReadKey before this adapter ever runs.
+func timedReadByte(r io.Reader) func() (byte, bool, error) {
+	return func() (byte, bool, error) {
+		var next [1]byte
+		n, err := r.Read(next[:])
+		if err == io.EOF {
+			return 0, false, nil // VTIME expired: no more continuation bytes
+		}
+		if err != nil {
+			return 0, false, err
+		}
+		if n == 0 { // defensive: a (0, nil) read also means "nothing more"
+			return 0, false, nil
+		}
+		return next[0], true, nil
+	}
+}
+
 // ReadKey blocks (VMIN=1, VTIME=0) for the first byte of a keypress, then hands
 // off to assembleKey. For an ESC first byte, assembleKey drains continuation
 // bytes using a timed reader so a lone ESC — or any non-arrow escape sequence —
@@ -183,18 +214,7 @@ func (t *osTerminal) ReadKey() (Key, error) {
 	}
 	defer restore()
 
-	readByte := func() (byte, bool, error) {
-		var next [1]byte
-		n, err := os.Stdin.Read(next[:])
-		if err != nil {
-			return 0, false, err
-		}
-		if n == 0 { // VTIME expired with no byte: nothing more to read
-			return 0, false, nil
-		}
-		return next[0], true, nil
-	}
-	return assembleKey(buf[0], readByte)
+	return assembleKey(buf[0], timedReadByte(os.Stdin))
 }
 
 // assembleKey decodes one keypress given an already-read first byte and a
@@ -208,9 +228,11 @@ func (t *osTerminal) ReadKey() (Key, error) {
 //
 // For a non-ESC first byte it decodes the single byte directly. For ESC it
 // collects continuation bytes up to maxEscSeqLen until the reader times out,
-// then decodes the whole buffer. A lone ESC (reader times out immediately)
-// returns promptly with decodeKey([]byte{0x1b}) — KeyOther today — and never
-// loops forever.
+// then decodes the whole buffer. A recognized 3-byte arrow sequence (ESC [ A/B)
+// returns immediately so held-arrow repeats decode as separate keys; all other
+// CSI forms drain to the timeout to stay in byte sync. A lone ESC (reader times
+// out immediately) returns promptly with decodeKey([]byte{0x1b}) — KeyOther
+// today — and never loops forever.
 func assembleKey(first byte, readByte func() (byte, bool, error)) (Key, error) {
 	if first != 0x1b {
 		return decodeKey([]byte{first}), nil
@@ -225,6 +247,19 @@ func assembleKey(first byte, readByte func() (byte, bool, error)) (Key, error) {
 			break
 		}
 		seq = append(seq, b)
+		// Short-circuit a recognized 3-byte arrow sequence so a held arrow
+		// key repeats as separate keypresses: ESC [ A/B is unambiguous (no
+		// real sequence extends it), so returning here leaves the next
+		// buffered repeat for the following ReadKey instead of draining it
+		// into this buffer, where it would coalesce into a >3-byte run that
+		// decodes to KeyOther and gets ignored. Longer non-arrow CSI
+		// sequences (function keys, mouse reports) don't match at 3 bytes, so
+		// they keep draining to the timeout as before and stay in sync.
+		if len(seq) == 3 {
+			if k := decodeKey(seq); k == KeyUp || k == KeyDown {
+				return k, nil
+			}
+		}
 	}
 	return decodeKey(seq), nil
 }

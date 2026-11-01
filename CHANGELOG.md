@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Arrow-key navigation no longer quits the app with a swallowed error. After
+  switching to the timed ESC-continuation read, the trailing zero-byte read (the
+  VTIME inter-byte timeout) is reported by `os.Stdin.Read` as `io.EOF`, because
+  `os.Stdin` is constructed with `ZeroReadIsEOF=true` and the poll layer converts
+  a zero-byte read into EOF. The continuation reader now translates that `io.EOF`
+  into the "no more bytes" timeout signal instead of a fatal read error, so up
+  and down decode cleanly again. Single-byte keys (`d`, `q`) were unaffected
+  because they skip the continuation path.
+- Holding an arrow key now scrolls continuously instead of moving one step and
+  stopping. The ESC-continuation drain now returns as soon as it has a
+  recognized 3-byte arrow sequence (`ESC [ A/B`) rather than draining buffered
+  repeats into one buffer that decodes to `KeyOther` and gets ignored. Longer
+  non-arrow CSI sequences still drain to the timeout as before, so the byte
+  stream stays in sync.
+
 ## [0.4.0] - 2026-10-31
 
 ### Fixed

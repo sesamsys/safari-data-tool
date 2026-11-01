@@ -113,6 +113,73 @@ func TestAssembleKey(t *testing.T) {
 // reader, a sequence followed by more bytes must stop at the sequence boundary
 // only via the timeout; here we assert the non-arrow sequence is fully drained
 // (reader reaches its end) and still decodes deterministically.
+// readKeyFromStream simulates one iteration of the ReadKey decode over a shared
+// byte stream, without the real terminal ioctls (which don't affect byte-level
+// decoding). It reads the first byte directly from the stream — mirroring the
+// blocking first read in ReadKey — and, for an ESC first byte, drains
+// continuations via timedReadByte (which translates the real stdin io.EOF
+// timeout into the "no more bytes" signal). This is the seam that exposes
+// whether a held arrow key repeats as separate KeyUp/KeyDown events or gets
+// coalesced into one ignored KeyOther.
+func readKeyFromStream(r *stdinLikeReader) (Key, error) {
+	var buf [1]byte
+	if _, err := r.Read(buf[:]); err != nil {
+		return KeyNone, err
+	}
+	if buf[0] != 0x1b {
+		return decodeKey(buf[:1]), nil
+	}
+	return assembleKey(buf[0], timedReadByte(r))
+}
+
+// TestAssembleKeyArrowRepeat verifies that two rapid arrow-up presses on the
+// wire — ESC [ A ESC [ A — decode as two separate KeyUp events, not one. This
+// is the regression test for the held-key freeze: before the 3-byte
+// short-circuit, assembleKey drained greedily past the first sequence into the
+// buffered second one, coalescing ESC [ A ESC [ A into a 6-byte buffer that
+// decodes to KeyOther (ignored), so holding an arrow moved one step then
+// stopped.
+func TestAssembleKeyArrowRepeat(t *testing.T) {
+	r := &stdinLikeReader{script: []byte{0x1b, '[', 'A', 0x1b, '[', 'A'}}
+
+	k1, err := readKeyFromStream(r)
+	if err != nil {
+		t.Fatalf("first key returned error %v; want KeyUp", err)
+	}
+	if k1 != KeyUp {
+		t.Fatalf("first key = %v, want KeyUp (second repeat was swallowed by greedy drain)", k1)
+	}
+
+	k2, err := readKeyFromStream(r)
+	if err != nil {
+		t.Fatalf("second key returned error %v; want KeyUp", err)
+	}
+	if k2 != KeyUp {
+		t.Fatalf("second key = %v, want KeyUp", k2)
+	}
+
+	// The stream is now exhausted; a further read reports end of input just as
+	// the real ReadKey loop would see stdin close.
+	if _, err := readKeyFromStream(r); err == nil {
+		t.Fatal("expected EOF after consuming both repeats, got nil")
+	}
+}
+
+// TestAssembleKeyNonArrowStillDrains verifies the short-circuit does not regress
+// the drain-to-sync behavior for longer non-arrow CSI sequences. ESC [ 1 ~ (a
+// Home/F1-style sequence) is not an arrow at 3 bytes, so it must keep draining
+// to completion and decode to KeyOther rather than returning early.
+func TestAssembleKeyNonArrowStillDrains(t *testing.T) {
+	r := &stdinLikeReader{script: []byte{'[', '1', '~'}}
+	key, err := assembleKey(0x1b, timedReadByte(r))
+	if err != nil {
+		t.Fatalf("non-arrow sequence returned error %v; want clean KeyOther", err)
+	}
+	if key != KeyOther {
+		t.Fatalf("non-arrow sequence decoded to %v, want KeyOther", key)
+	}
+}
+
 func TestAssembleKeyDrainsEntireSequence(t *testing.T) {
 	// Longer-than-arrow CSI mouse-ish report: ESC [ M followed by 3 bytes.
 	cont := []byte{'[', 'M', 0x20, 0x21, 0x22}
